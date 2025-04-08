@@ -11,7 +11,7 @@ nltk.download('punkt')
 nltk.download('stopwords')
 
 # App Configuration
-st.set_page_config(page_title="CareerConnect | Your Dream Job Awaits!", layout="wide")
+st.set_page_config(page_title="CareerConnect | ", layout="wide")
 
 # Theme Toggle
 if "theme" not in st.session_state:

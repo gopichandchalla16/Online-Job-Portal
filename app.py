@@ -10,12 +10,11 @@ st.set_page_config(page_title="CareerConnect | Your Dream Job Awaits!", layout="
 if "theme" not in st.session_state:
     st.session_state.theme = "Light"
 
-theme = st.sidebar.selectbox("🌓 Theme", ["Light", "Dark"])
-if theme != st.session_state.theme:
-    st.session_state.theme = theme
-    st.experimental_rerun()
+selected_theme = st.sidebar.selectbox("🌓 Theme", ["Light", "Dark"], index=0 if st.session_state.theme == "Light" else 1)
+if selected_theme != st.session_state.theme:
+    st.session_state.theme = selected_theme
+    st.sidebar.success("Theme updated! Please refresh the app manually.")
 
-# Custom Style
 if st.session_state.theme == "Dark":
     st.markdown("""
         <style>
@@ -94,21 +93,29 @@ if saved_jobs.empty:
 else:
     st.table(saved_jobs[['Job Title', 'Company', 'Location']])
 
-# Resume Builder
+# Resume Builder and Upload
 st.markdown("---")
-st.subheader("📄 Resume Builder")
+st.subheader("📄 Resume Builder & Upload")
 with st.form("resume_form"):
     name = st.text_input("Full Name")
     email = st.text_input("Email")
     experience = st.text_area("Experience Summary")
     skills = st.text_input("Key Skills (comma-separated)")
-    submitted = st.form_submit_button("Generate Resume")
+    resume_file = st.file_uploader("Upload Your Resume (PDF)", type=['pdf'])
+    cover_letter_file = st.file_uploader("Upload Cover Letter (Optional)", type=['pdf'])
+    submitted = st.form_submit_button("Submit Resume")
     if submitted:
-        st.success("✅ Resume submitted successfully! (Simulated)")
-        st.write(f"**Name:** {name}")
-        st.write(f"**Email:** {email}")
-        st.write(f"**Experience:** {experience}")
-        st.write(f"**Skills:** {skills}")
+        if resume_file:
+            st.success("✅ Resume submitted successfully!")
+            st.write(f"**Name:** {name}")
+            st.write(f"**Email:** {email}")
+            st.write(f"**Experience:** {experience}")
+            st.write(f"**Skills:** {skills}")
+            st.write("**Resume Uploaded:** ✅")
+            if cover_letter_file:
+                st.write("**Cover Letter Uploaded:** ✅")
+        else:
+            st.warning("⚠️ Please upload your resume before submitting.")
 
 # Job Posting (for Employers)
 st.markdown("---")

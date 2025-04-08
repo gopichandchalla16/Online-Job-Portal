@@ -36,7 +36,7 @@ else:
         </style>
     """, unsafe_allow_html=True)
 
-# Sample Job Data (Expanded)
+# Sample Job Data
 jobs_data = pd.DataFrame({
     'Job ID': [1, 2, 3, 4, 5],
     'Job Title': ['Data Analyst', 'Frontend Developer', 'UI/UX Designer', 'Product Manager', 'Machine Learning Engineer'],
@@ -57,16 +57,20 @@ if "applications" not in st.session_state:
     st.session_state.applications = {}
 if "profile" not in st.session_state:
     st.session_state.profile = {}
-if "endorsements" not in st.session_state:
-    st.session_state.endorsements = {}
 if "alerts" not in st.session_state:
     st.session_state.alerts = []
 if "portfolio" not in st.session_state:
     st.session_state.portfolio = []
+if "certifications" not in st.session_state:
+    st.session_state.certifications = []
+if "interview_experiences" not in st.session_state:
+    st.session_state.interview_experiences = []
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # App Title
 st.title("🎯 CareerConnect")
-st.caption("Connecting Job Seekers with Employers")
+st.caption("Your AI-Powered Career Companion")
 st.markdown("---")
 
 # Sidebar: Navigation and Filters
@@ -110,7 +114,7 @@ for idx, row in filtered_jobs.iterrows():
         st.write(f"**Salary Range:** {row['Salary_Range']}")
         st.write(f"**Company Rating:** {row['Rating']}/5")
         if row['Company'] in company_reviews:
-            st.write(f"**Employer Insights**: {company_reviews[row['Company']][0]}")
+            st.write(f"**Employer Insight**: {company_reviews[row['Company']][0]}")
         st.write(f"**Required Skills:** {row['Required_Skills']}")
         st.write(f"**Description:** {row['Description']}")
         if "profile" in st.session_state and "skills" in st.session_state.profile:
@@ -118,6 +122,8 @@ for idx, row in filtered_jobs.iterrows():
             req_skills = set(row['Required_Skills'].lower().split(", "))
             fit_score = len(user_skills.intersection(req_skills)) / len(req_skills) * 100 if req_skills else 0
             st.write(f"**Job Fit Score**: {int(fit_score)}%")
+            success_score = (fit_score * 0.7) + (completeness * 0.3)  # Weighted score
+            st.write(f"**Application Success Predictor**: {int(success_score)}% chance of success")
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
             if st.button("💾 Save Job", key=f"save_{row['Job ID']}"):
@@ -199,7 +205,7 @@ if st.session_state.applications:
 else:
     st.info("No job applications yet.")
 
-# Employer Insights (Detailed)
+# Employer Insights
 st.markdown("---")
 st.subheader("🏢 Employer Insights")
 for company, (review1, review2, rating) in company_reviews.items():
@@ -214,58 +220,89 @@ st.markdown("- 💡 [Resume Writing Tips](https://www.linkedin.com/learning/) - 
 st.markdown("- 🎤 [Interview Guidance](https://www.indeed.com/career-advice/interviewing) - Practice common questions.")
 st.markdown("- 📚 [Free Courses](https://www.coursera.org/) - Upskill with free resources.")
 
-# Enhanced Features: Job Recommendations
+# Interactive Chatbot
 st.markdown("---")
-st.subheader("🔮 AI-Powered Job Recommendations")
-if "profile" in st.session_state and "skills" in st.session_state.profile:
-    user_skills = [skill.strip().lower() for skill in st.session_state.profile["skills"].split(",")]
-    recommended_jobs = jobs_data[jobs_data['Required_Skills'].str.lower().apply(
-        lambda req: any(skill in req for skill in user_skills)
-    )].sort_values(by="Rating", ascending=False)
-    if not recommended_jobs.empty:
-        st.table(recommended_jobs[['Job Title', 'Company', 'Location', 'Salary_Range', 'Rating']])
-    else:
-        st.info("No recommendations based on your skills yet.")
-else:
-    st.info("Complete your profile for personalized recommendations!")
+st.subheader("🤖 CareerConnect Chatbot")
+with st.form("chat_form"):
+    user_query = st.text_input("Ask me anything (e.g., 'How to improve my resume?')")
+    submitted = st.form_submit_button("Send")
+    if submitted and user_query:
+        st.session_state.chat_history.append({"user": user_query, "bot": ""})
+        query_lower = user_query.lower()
+        if "resume" in query_lower:
+            st.session_state.chat_history[-1]["bot"] = "To improve your resume, add keywords like 'Python' or 'SQL' from job descriptions, keep it to 1-2 pages, and use action verbs like 'developed' or 'led'."
+        elif "interview" in query_lower:
+            st.session_state.chat_history[-1]["bot"] = "Prepare for interviews by researching the company, practicing STAR method answers (Situation, Task, Action, Result), and dressing professionally."
+        elif "job search" in query_lower:
+            st.session_state.chat_history[-1]["bot"] = "For a better job search, use specific keywords in filters, set alerts, and network with employers via messages."
+        else:
+            st.session_state.chat_history[-1]["bot"] = "I’m here to help! Try asking about resumes, interviews, or job search strategies."
+for chat in st.session_state.chat_history:
+    st.write(f"**You**: {chat['user']}")
+    st.write(f"**Bot**: {chat['bot']}")
 
-# Skill Gap Analysis
-st.markdown("---")
-st.subheader("🔍 Skill Gap Analysis")
-if "profile" in st.session_state and "skills" in st.session_state.profile:
-    desired_job = st.selectbox("Select Desired Job", jobs_data["Job Title"])
-    user_skills = set(st.session_state.profile["skills"].lower().split(", "))
-    req_skills = set(jobs_data[jobs_data["Job Title"] == desired_job]["Required_Skills"].iloc[0].lower().split(", "))
-    gaps = req_skills - user_skills
-    if gaps:
-        st.write(f"**Skills to Learn for {desired_job}**: {', '.join(gaps)}")
-    else:
-        st.write(f"You’re a great fit for {desired_job}!")
-else:
-    st.info("Complete your profile for skill gap analysis!")
+# Job Application Success Predictor (Moved to Job Listings)
 
-# Personalized Job Alerts
+# Employer Contact Simulator
 st.markdown("---")
-st.subheader("🔔 Personalized Job Alerts")
-with st.form("alert_form"):
-    keywords = st.text_input("Keywords (e.g., Python, Design)")
-    location = st.selectbox("Alert Location", jobs_data["Location"].unique())
-    industry = st.selectbox("Alert Industry", jobs_data["Industry"].unique())
-    submitted = st.form_submit_button("Set Alert")
+st.subheader("📩 Employer Contact Simulator")
+selected_company = st.selectbox("Select Employer", jobs_data["Company"].unique())
+message = st.text_area("Message to Employer")
+if st.button("Send Message"):
+    st.success(f"Message sent to {selected_company}! (Simulated)")
+
+# Resume Visibility Booster
+st.markdown("---")
+st.subheader("✨ Resume Visibility Booster")
+if "profile" in st.session_state:
+    st.write("**Current Profile Strength**:")
+    if len(st.session_state.profile.get("skills", "").split(", ")) < 5:
+        st.write("- Add more skills (aim for 5+) to stand out.")
+    if not st.session_state.portfolio:
+        st.write("- Add projects to your portfolio for visibility.")
+    if not resume_file:
+        st.write("- Upload a resume file to boost employer interest.")
+else:
+    st.info("Complete your profile to boost visibility!")
+
+# Job Seeker Dashboard
+st.markdown("---")
+st.subheader("📊 Job Seeker Dashboard")
+apps_count = len(st.session_state.applications)
+alerts_count = len(st.session_state.alerts)
+profile_views = random.randint(0, 50)  # Simulated
+st.write(f"**Applications Submitted**: {apps_count}")
+st.write(f"**Active Alerts**: {alerts_count}")
+st.write(f"**Profile Views (Simulated)**: {profile_views}")
+st.bar_chart({"Applications": [apps_count], "Alerts": [alerts_count], "Views": [profile_views]})
+
+# Interview Experience Sharing
+st.markdown("---")
+st.subheader("🎤 Interview Experience Sharing")
+with st.form("interview_exp_form"):
+    company = st.text_input("Company Name")
+    exp = st.text_area("Your Interview Experience")
+    submitted = st.form_submit_button("Share Experience")
     if submitted:
-        st.session_state.alerts.append({"keywords": keywords, "location": location, "industry": industry})
-        st.success("Alert set!")
-if st.session_state.alerts:
-    for alert in st.session_state.alerts:
-        matches = jobs_data[
-            (jobs_data["Required_Skills"].str.contains(alert["keywords"], case=False, na=False)) &
-            (jobs_data["Location"] == alert["location"]) &
-            (jobs_data["Industry"] == alert["industry"])
-        ]
-        if not matches.empty:
-            st.write(f"**Alert Match**: {alert['keywords']} in {alert['location']} ({alert['industry']})")
-            st.table(matches[["Job Title", "Company", "Salary_Range"]])
+        st.session_state.interview_experiences.append({"company": company, "exp": exp})
+        st.success("Experience shared!")
+if st.session_state.interview_experiences:
+    for exp in st.session_state.interview_experiences:
+        st.write(f"**{exp['company']}**: {exp['exp']}")
+
+# Skill Certification Tracker
+st.markdown("---")
+st.subheader("🏆 Skill Certification Tracker")
+with st.form("cert_form"):
+    cert_name = st.text_input("Certification Name")
+    date = st.date_input("Completion Date")
+    submitted = st.form_submit_button("Add Certification")
+    if submitted:
+        st.session_state.certifications.append({"name": cert_name, "date": date.strftime("%Y-%m-%d")})
+        st.success("Certification added!")
+if st.session_state.certifications:
+    st.table(pd.DataFrame(st.session_state.certifications))
 
 # Footer
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: gray;'>© 2025 CareerConnect — Inspired by LinkedIn & Indeed</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: gray;'>© 2025 CareerConnect — Inspired by LinkedIn, Indeed, and Naukri</div>", unsafe_allow_html=True)

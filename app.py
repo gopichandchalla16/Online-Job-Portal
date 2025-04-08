@@ -2,78 +2,112 @@ import streamlit as st
 from datetime import datetime
 import pandas as pd
 import random
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 
-# Custom CSS with Dark Mode Support
-def load_css(dark_mode=False):
-    if dark_mode:
+# Download NLTK data (no API keys needed)
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Custom CSS with Job-Seeker Themes
+def load_css(theme="Professional"):
+    if theme == "Professional":  # Dark Blue Professional Theme
         st.markdown("""
             <style>
             .main {
-                background-color: #2c3e50;
-                color: #ecf0f1;
+                background-color: #eef2f7;
                 padding: 20px;
             }
             .title {
                 font-size: 40px;
-                color: #ecf0f1;
+                color: #1e3a8a;
                 text-align: center;
             }
             .sidebar .sidebar-content {
-                background-color: #34495e;
+                background-color: #1e3a8a;
                 color: white;
             }
             .stButton>button {
-                background-color: #3498db;
+                background-color: #3b82f6;
                 color: white;
                 border-radius: 5px;
             }
             .stTextInput>div>div>input {
-                background-color: #34495e;
-                color: white;
                 border-radius: 5px;
+                border: 1px solid #1e3a8a;
             }
             </style>
         """, unsafe_allow_html=True)
-    else:
+    elif theme == "Clean Blue":  # Light Blue Modern Theme
         st.markdown("""
             <style>
             .main {
-                background-color: #f0f2f6;
+                background-color: #f0f9ff;
                 padding: 20px;
             }
             .title {
                 font-size: 40px;
-                color: #2c3e50;
+                color: #0369a1;
                 text-align: center;
             }
             .sidebar .sidebar-content {
-                background-color: #34495e;
+                background-color: #0369a1;
                 color: white;
             }
             .stButton>button {
-                background-color: #3498db;
+                background-color: #60a5fa;
                 color: white;
                 border-radius: 5px;
             }
             .stTextInput>div>div>input {
                 border-radius: 5px;
+                border: 1px solid #0369a1;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+    elif theme == "Success Green":  # Green Motivational Theme
+        st.markdown("""
+            <style>
+            .main {
+                background-color: #f0fdf4;
+                padding: 20px;
+            }
+            .title {
+                font-size: 40px;
+                color: #15803d;
+                text-align: center;
+            }
+            .sidebar .sidebar-content {
+                background-color: #15803d;
+                color: white;
+            }
+            .stButton>button {
+                background-color: #4ade80;
+                color: white;
+                border-radius: 5px;
+            }
+            .stTextInput>div>div>input {
+                border-radius: 5px;
+                border: 1px solid #15803d;
             }
             </style>
         """, unsafe_allow_html=True)
 
 # Initialize Session State
-if "dark_mode" not in st.session_state:
-    st.session_state["dark_mode"] = False
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "Professional"
 if "saved_jobs" not in st.session_state:
     st.session_state["saved_jobs"] = []
 if "goals" not in st.session_state:
     st.session_state["goals"] = []
 
-# Sidebar Navigation and Dark Mode Toggle
+# Sidebar Navigation and Theme Selector
 st.sidebar.title("Navigation")
-dark_mode = st.sidebar.checkbox("Dark Mode", value=st.session_state["dark_mode"])
-st.session_state["dark_mode"] = dark_mode
-load_css(dark_mode)
+theme = st.sidebar.selectbox("Choose Theme", ["Professional", "Clean Blue", "Success Green"], 
+                             index=["Professional", "Clean Blue", "Success Green"].index(st.session_state["theme"]))
+st.session_state["theme"] = theme
+load_css(theme)
 page = st.sidebar.radio("Go to", ["Home", "Profile", "Job Listings", "Resume Builder", 
                                  "Applications", "Career Resources", "Career Goals", "Mock Interview"])
 
@@ -87,17 +121,22 @@ job_listings = pd.DataFrame({
     "Location": ["Remote", "New York", "San Francisco", "London"],
     "Industry": ["Tech", "Analytics", "Product", "Design"],
     "Rating": [4.5, 4.2, 4.8, 4.0],
-    "Required_Skills": ["Python, Java", "SQL, Excel", "Agile, UX", "Photoshop, Illustrator"]
+    "Required_Skills": ["Python, Java, C++", "SQL, Excel, Python", "Agile, UX, Leadership", "Photoshop, Illustrator, UI"]
 })
 
-# Home Page
+# Home Page with Motivational Dashboard
 if page == "Home":
     st.header("Welcome to JobQuest!")
-    st.write("Find your dream job, build a standout resume, track your applications, and more!")
+    st.write("Connect with employers, build your career, and land your dream job!")
     st.image("https://via.placeholder.com/800x300.png?text=JobQuest+Banner", use_column_width=True)
     st.write("Current Date: April 08, 2025")
+    st.subheader("Motivational Corner")
+    quotes = ["The only way to do great work is to love what you do. – Steve Jobs", 
+              "Opportunities don’t happen. You create them. – Chris Grosser"]
+    st.write(random.choice(quotes))
+    st.write("**Fun Fact**: Over 70% of job seekers find jobs through networking!")
 
-# User Profile Page
+# User Profile Page with Skill Extraction
 elif page == "Profile":
     st.header("Your Profile")
     with st.form("profile_form"):
@@ -107,15 +146,21 @@ elif page == "Profile":
         skills = st.text_input("Skills (comma-separated)")
         submitted = st.form_submit_button("Save Profile")
         if submitted:
+            # NLTK Skill Extraction from Experience
+            tokens = word_tokenize(experience.lower())
+            stop_words = set(stopwords.words('english'))
+            extracted_skills = [word for word in tokens if word not in stop_words and word.isalpha() and len(word) > 2]
             st.session_state["profile"] = {"name": name, "email": email, 
-                                         "experience": experience, "skills": skills}
+                                         "experience": experience, "skills": skills, 
+                                         "extracted_skills": ", ".join(extracted_skills[:5])}
             st.success("Profile saved successfully!")
 
     if "profile" in st.session_state:
         st.subheader("Your Saved Profile")
         st.write(st.session_state["profile"])
+        st.write(f"**Extracted Skills from Experience**: {st.session_state['profile']['extracted_skills']}")
 
-# Job Listings Page with Match Score and Saved Jobs
+# Job Listings Page with Enhanced Recommendations
 elif page == "Job Listings":
     st.header("Explore Job Listings")
     location_filter = st.multiselect("Filter by Location", job_listings["Location"].unique())
@@ -143,6 +188,7 @@ elif page == "Job Listings":
     st.write(f"Rating: {job_details['Rating']}/5")
     st.write(f"Location: {job_details['Location']}")
     st.write(f"Industry: {job_details['Industry']}")
+    st.write(f"Required Skills: {job_details['Required_Skills']}")
     st.write(f"Match Score: {job_details['Match_Score']:.1f}%")
     if st.button("Save Job"):
         if selected_job not in st.session_state["saved_jobs"]:
@@ -155,7 +201,7 @@ elif page == "Job Listings":
         st.subheader("Saved Jobs")
         st.write(st.session_state["saved_jobs"])
 
-# Resume Builder Page
+# Resume Builder Page with Keyword Optimizer
 elif page == "Resume Builder":
     st.header("Build Your Resume")
     template = st.selectbox("Choose a Template", ["Modern", "Classic", "Creative"])
@@ -167,6 +213,20 @@ elif page == "Resume Builder":
         st.write(f"**Skills**: {profile['skills']}")
         st.write(f"**Experience**:")
         st.write(profile['experience'])
+        
+        # Keyword Optimizer with NLTK
+        st.subheader("Keyword Optimizer")
+        job_keywords = "python, sql, leadership, design, communication, teamwork"
+        resume_text = f"{profile['skills']} {profile['experience']}".lower()
+        tokens = word_tokenize(resume_text)
+        stop_words = set(stopwords.words('english'))
+        resume_keywords = [word for word in tokens if word not in stop_words and word.isalpha()]
+        missing_keywords = [kw for kw in job_keywords.split(", ") if kw not in resume_keywords]
+        if missing_keywords:
+            st.write(f"**Suggested Keywords to Add**: {', '.join(missing_keywords)}")
+        else:
+            st.write("Your resume is well-optimized!")
+        
         if st.button("Download Resume"):
             st.write("Download functionality placeholder (requires local deployment)")
     else:
@@ -244,4 +304,4 @@ elif page == "Mock Interview":
 
 # Footer
 st.markdown("---")
-st.write("© 2025 JobQuest | Built for Job Seekers")
+st.write("© 2025 JobQuest | Built for Job Seekers | Inspired by LinkedIn & Indeed")
